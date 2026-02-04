@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { FindAndCountOptions, Op, literal, where, col } from 'sequelize';
 import { Bull } from './bull.model';
 import { CreateBullDto } from './dto/create-bull.dto';
+import { FavoritesService } from '../favorites/favorites.service';
 
 export type BullsListQuery = {
   page?: number;
@@ -14,9 +15,16 @@ export type BullsListQuery = {
   sort?: 'score_desc' | 'score_asc';
 };
 
+export type EnhancedBull = Omit<Bull, 'toJSON'> & {
+  isFavorite: boolean;
+};
+
 @Injectable()
 export class BullsService {
-  constructor(@InjectModel(Bull) private readonly bullModel: typeof Bull) {}
+  constructor(
+    @InjectModel(Bull) private readonly bullModel: typeof Bull,
+    private readonly favoritesService: FavoritesService,
+  ) {}
 
   private toBullCreatePayload(dto: CreateBullDto) {
     return {
@@ -55,7 +63,28 @@ export class BullsService {
     };
   }
 
-  async list(query: BullsListQuery) {
+  private async enhanceBullsWithFavorites(
+    bulls: Bull[],
+    userId?: number,
+  ): Promise<EnhancedBull[]> {
+    if (!userId) {
+      return bulls.map((bull) => ({
+        ...bull.toJSON(),
+        isFavorite: false,
+      }));
+    }
+
+    const favoriteBullIds =
+      await this.favoritesService.listFavoriteBullIds(userId);
+    const favoriteBullSet = new Set(favoriteBullIds);
+
+    return bulls.map((bull) => ({
+      ...bull.toJSON(),
+      isFavorite: favoriteBullSet.has(bull.id),
+    }));
+  }
+
+  async list(query: BullsListQuery, userId?: number) {
     // Current page number from frontend (never below 1)
     const pageNumber = Math.max(1, Number(query.page ?? 1));
     // How many records per page (capped to avoid heavy queries)
@@ -113,8 +142,11 @@ export class BullsService {
     // Query DB with pagination
     const { rows, count } = await this.bullModel.findAndCountAll(queryOptions);
 
+    // Enhance bulls with isFavorite flag
+    const enhancedRows = await this.enhanceBullsWithFavorites(rows, userId);
+
     return {
-      data: rows,
+      data: enhancedRows,
       page: pageNumber,
       limit: pageSize,
       total: count,

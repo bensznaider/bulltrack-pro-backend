@@ -125,7 +125,7 @@ Prevents duplicate favorites.
 ## ⚙️ Environment Variables
 
 # Server
-PORT=3000
+PORT=3001
 
 # Database
 DB_HOST=your_db_host

@@ -182,3 +182,16 @@ This endpoint can later power a frontend “Import Bulls” feature.
 - Computed score handled at DB level
 - User data isolated via JWT
 - Favorites enforced by DB constraints
+
+---
+
+## 🔮 Future Improvements (2 more weeks)
+
+- Replace db:sync with migrations: introduce Sequelize migrations + seed scripts for production-safe, versioned schema changes.
+- Users model improvements to support different roles (admin).
+- Restrict POST /bulls and POST /bulls/bulk (and any future admin ops) to admin users/roles.
+- Auth: refresh tokens, rate limiting on /auth/login, stronger password policies.
+- Search upgrades: add Postgres full-text search or trigram indexing (pg_trgm) for fast name/tag search at 100k+ records.
+- Index tuning for scale: add composite indexes for frequent filter combos (e.g. (origen, pelaje, uso)).
+- Observability: improve logging, metrics (latency/DB time), and error reporting.
+- Consistent error contracts: standardized error response format and improved validation messages for clients.

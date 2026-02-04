@@ -81,4 +81,6 @@ export class Bull extends Model<
 
   @HasMany(() => Favorite)
   declare favorites?: NonAttribute<Favorite[]>;
+
+  declare isFavorite?: NonAttribute<boolean>;
 }

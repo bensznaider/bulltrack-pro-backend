@@ -1,7 +1,17 @@
-import { Controller, Get, Query, Body, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Body,
+  Post,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { BullsService } from './bulls.service';
 import { CreateBullDto } from './dto/create-bull.dto';
 import { BulkCreateBullsDto } from './dto/bulk-create-bulls.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { AuthUser } from '../auth/types/auth-user.type';
 
 @Controller('bulls')
 export class BullsController {
@@ -17,8 +27,10 @@ export class BullsController {
     return this.bullsService.createBulk(dto.bulls);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   list(
+    @Request() req: { user?: AuthUser },
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
@@ -27,14 +39,17 @@ export class BullsController {
     @Query('pelaje') pelaje?: 'negro' | 'colorado',
     @Query('sort') sort?: 'score_desc' | 'score_asc',
   ) {
-    return this.bullsService.list({
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      search,
-      origen,
-      uso,
-      pelaje,
-      sort,
-    });
+    return this.bullsService.list(
+      {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        search,
+        origen,
+        uso,
+        pelaje,
+        sort,
+      },
+      req.user?.sub,
+    );
   }
 }
